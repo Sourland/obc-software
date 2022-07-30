@@ -6,7 +6,7 @@
 #include "definitions.h"
 #include "OBC_Definitions.hpp"
 #include "BootCounter.hpp"
-#include "FreeRTOSTasks/Task.hpp"
+#include "../../cross-platform-software/common/inc/FreeRTOSTasks/Task.hpp"
 #include "FreeRTOSTasks/TaskList.hpp"
 #include "TaskInitialization.hpp"
 
@@ -30,13 +30,18 @@ extern "C" void main_cpp() {
     using namespace TaskList;
 
     SYS_Initialize(NULL);
-    Init::initializeTasks();
+    Initialization::initializeTasks();
 
     mcuTemperatureTask.emplace();
     housekeepingTask.emplace();
     timeBasedSchedulingTask.emplace();
     statisticsReportingTask.emplace();
+    updateParametersTask.emplace();
 
+    xTaskCreateStatic(vClassTask<UpdateParametersTask>, updateParametersTask->taskName,
+                      updateParametersTask->taskStackDepth,
+                      &updateParametersTask, tskIDLE_PRIORITY + 1, updateParametersTask->taskStack,
+                      &updateParametersTask->taskBuffer);
     xTaskCreateStatic(vClassTask<StatisticsReportingTask>, statisticsReportingTask->taskName,
                       statisticsReportingTask->taskStackDepth, &statisticsReportingTask, tskIDLE_PRIORITY + 1,
                       statisticsReportingTask->taskStack, &statisticsReportingTask->taskBuffer);
