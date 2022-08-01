@@ -5,11 +5,20 @@ void TimeKeepingTask::execute() {
     setEpoch(dateTime);
     RTC_TimeSet(&dateTime);
 
+    RTC_CallbackRegister([](uint32_t intCause, uintptr_t context) {
+        TimeKeepingTask *task = reinterpret_cast<TimeKeepingTask *>(context);
+        if ((intCause & RTC_ALARM_MASK_SS) == RTC_ALARM_MASK_SS) {
+            xTaskNotify(task->taskHandle, 0, eNoAction);
+        }
+    }, reinterpret_cast<uintptr_t>(this));
+
+    RTC_InterruptEnable(RTC_INT_ALARM);
+
     while (true) {
         RTC_TimeGet(&dateTime);
         setTimePlatformParameters(dateTime);
         printOnBoardTime();
-        vTaskDelay(pdMS_TO_TICKS(delayMs));
+        xTaskNotifyWait(0, 0, nullptr, portMAX_DELAY);
     }
 }
 
